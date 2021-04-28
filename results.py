@@ -12,22 +12,22 @@ in each cell, 1 if system obtained a true positive (TP) for this item, 0 otherwi
 For each input data item, computes how many systems obtained a TP for it.
 Creates as many bins as there are systems (S) plus one (for zero).
 
-  - Bin N holds the number of data items for which exactly N systems obtained a TP:
+  - bin N holds the number of data items for which exactly N systems obtained a TP:
   - bin 0 describes the set of most difficult data items, bin S+1 the easiest data items.
 
 We can then describe a data item by the bin that contains it: its difficulty.
 We can finally summmarize a system's result by its number of TPs in each bin,
 or by the proportion of items in that bin for which it produced a TP.
 
-
-    # Example: draw system results from a binomial distribution:
+## Example
+    # create random system results drawn from a binomial distribution:
     n_sys = 10
     n_data = 100
     proba_tp = 0.8
     rng = np.random.default_rng()
     data = rng.binomial(1, proba_tp, (n_sys, n_data))
 
-    # 
+    # create bins and system statistics per bin
     r = TPS(data)
     r.compute_bins()
     print(r.results)
@@ -39,9 +39,9 @@ or by the proportion of items in that bin for which it produced a TP.
 """
 
 """
-    Copyright (c) 2020 LIMSI CNRS
+    Copyright (c) 2020-2021 LISN CNRS
     All rights reserved.
-    Pierre Zweigenbaum, LIMSI, CNRS, Université Paris-Saclay <pz@limsi.fr>
+    Pierre Zweigenbaum, LISN, CNRS, Université Paris-Saclay <pz@lisn.fr>
 """
 
 import sys

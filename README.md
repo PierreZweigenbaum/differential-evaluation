@@ -15,7 +15,7 @@ We can then describe a data item by the bin that contains it: its difficulty.
 We can finally summmarize a system's result by its number of TPs in each bin,
 or by the proportion of items in that bin for which it produced a TP.
 
-## Example:
+## Example
     # create random system results drawn from a binomial distribution:
     n_sys = 10
     n_data = 100
