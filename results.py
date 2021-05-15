@@ -36,6 +36,9 @@ or by the proportion of items in that bin for which it produced a TP.
     print(np.round(r.prop_nps_per_bin, decimals=2)*100)
     print(np.sum(r.results, axis=1))
 
+## Command-line example
+    python results.py --system-names A1,A2,B1,B2,C1,C2,D,E1,E2 --plot-bins plot.pdf true-positives-per-system.tab.gz
+
 """
 
 """
@@ -50,12 +53,15 @@ import csv
 import argparse
 import logging
 import numpy as np
+import pandas as pd
+import matplotlib
+import matplotlib.pyplot as plt
 
 # Program version
 version = '0.1'
 
 #================
-# 
+# Base class for set of results
 #================
 class Results():
     """Set of results"""
@@ -105,27 +111,64 @@ class TPS(Results):
         We can finally summmarize a system's result by its number of TPs (correct results) in each bin,
         and by the proportion of items in that bin for which it produced a TP (correct result)."""
         # a data item has been found as TP by how many systems
-        self.tp_in = np.sum(self.results, axis=0)
+        self.tps_per_item = np.sum(self.results, axis=0)
         # histogram: nb_sys+1 bins, nb_sys+2 bin edges
         bin_def = range(len(self.results)+2)
         # histogram: number of data points found as TPs by N systems, for N in 0..nb_systems
-        self.bins, self.bin_edges = np.histogram(self.tp_in, bins=bin_def)
-        # bin of a data item: this is exactly self.tp_in
-        # number of data items in the bin of item i: self.bins[self.tp_in[i]]
-        # number of data items in the bin of each item: self.bins[self.tp_in]
+        self.bins, self.bin_edges = np.histogram(self.tps_per_item, bins=bin_def)
+        # bin of a data item: this is exactly self.tps_per_item
+        # number of data items in the bin of item i: self.bins[self.tps_per_item[i]]
+        # number of data items in the bin of each item: self.bins[self.tps_per_item]
         # number of data items in the bin of each item for a system sys:
-        self.nps_per_bin = np.array([ np.histogram(self.tp_in[sys==1], bins=bin_def)[0]
+        self.nps_per_bin = np.array([ np.histogram(self.tps_per_item[sys==1], bins=bin_def)[0]
                                       for sys in self.results ])
-        # todo: remove nan's
+        # remove nan's
         self.prop_nps_per_bin = np.nan_to_num(self.nps_per_bin / self.bins)
 
+        # Binary vector with 1 if data point is in bin k
+        self.bin_indicators = [self.tps_per_item == k for k in range(len(self.results)+1)]
         # how many TPs in each bin for each system:
-        # sum([self.tp_in[sys[i]] for i in range(len())])
+        # sum([self.tps_per_item[sys[i]] for i in range(len())])
         return
 
-    def plot_bins(self):
+    def plot_bin_size(self):
         plt.plot(.5*(self.bin_edges[1:]+self.bin_edges[:-1]), self.bins)
         plt.show
+        return
+
+    def plot_bins(self, file=None, names=None):
+        systems = (names if names is not None
+                   else [chr(i) for i in range(ord('A'), ord('A')+len(self.results))])
+        bins = list(range(len(systems)+1))
+        sysbins = np.round(self.prop_nps_per_bin, decimals=2)
+
+        fig, ax = plt.subplots()
+        im = ax.imshow(sysbins)
+
+        # We want to show all ticks...
+        ax.set_xticks(np.arange(len(bins)))
+        ax.set_yticks(np.arange(len(systems)))
+        # ... and label them with the respective list entries
+        ax.set_xticklabels(bins)
+        ax.set_yticklabels(systems)
+        ax.set_ylim(len(systems)-0.5,-0.5) # show first and last systems with full row height
+
+        # Rotate the tick labels and set their alignment.
+        # plt.setp(ax.get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor")
+
+        # Loop over data dimensions and create text annotations.
+        for i in range(len(systems)):
+            for j in range(len(bins)):
+                val = int(sysbins[i, j]*100)
+                text = ax.text(j, i, val,
+                               ha="center", va="center",
+                               color=("b" if val > 50 else "w"))
+
+        ax.set_title("Performance (%) of each system on each bin")
+        fig.tight_layout()
+        plt.show()
+        if file is not None:
+            fig.savefig(file)
         return
 
 if __name__ == '__main__':
@@ -141,7 +184,8 @@ if __name__ == '__main__':
 
         groupA = parser.add_argument_group('Action')
         groupA.add_argument("--compute-bins", action="store_true", help="Compute bins.")
-        groupA.add_argument("--plot-bins", action="store_true", help="Compute and plot bins.")
+        groupA.add_argument("--plot-bins", help="Compute bins and plot them to the specified file.")
+        groupA.add_argument("--system-names", help="Comma-separated list of system names.")
 
         groupS = parser.add_argument_group('Special')
         groupS.add_argument("-q", "--quiet", action="store_true", help="suppress reporting progress info.")
@@ -161,13 +205,26 @@ if __name__ == '__main__':
 
         r = TPS.from_csv(args.systems)
 
-        if args.compute_bins:
+        if args.compute_bins or args.plot_bins:
             logging.info("Computing bins of gold results: bin N holds the number of data items for which exactly N systems obtained a true positive")
             r.compute_bins()
             # print(r.results)
+            logging.info("Number of data points in each bin")
             print(r.bins)
+            logging.info("Number of true positives in each bin for each system")
             print(r.nps_per_bin)
+            logging.info("Percentage of true positives in each bin for each system")
             print(np.round(r.prop_nps_per_bin, decimals=2)*100)
+            logging.info("Number of true positives for each system")
             print(np.sum(r.results, axis=1))
+            logging.info("Recall of each system")
+            print(np.round(np.sum(r.results, axis=1)/np.sum(r.bins), decimals=4)*100)
+        if args.plot_bins:
+            logging.info("Plotting bins to {}".format(args.plot_bins))
+            names = None
+            if args.system_names:
+                names = args.system_names.split(sep=',')
+            r.plot_bins(file=args.plot_bins, names=names)
+            
 
     parse_execute_command_line()
