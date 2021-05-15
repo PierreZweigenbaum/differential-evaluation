@@ -58,7 +58,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 
 # Program version
-version = '0.1'
+version = '0.2'
 
 #================
 # Base class for set of results
