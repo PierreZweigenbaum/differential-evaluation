@@ -51,6 +51,7 @@ import sys
 import os
 import csv
 import argparse
+import re
 import logging
 import numpy as np
 import pandas as pd
@@ -66,12 +67,17 @@ version = '0.2'
 class Results():
     """Set of results"""
 
-    def __init__(self, iterables):
-        """Input is a list of iterables of the same length.
+    def __init__(self, iterables, inputs=None, names=None):
+        """Argument is a list of iterables of the same length.
 Each iterable represents the results obtained by a system on a series of input data items.
-There are as many iterables as examined systems."""
+There are as many iterables as examined systems.
+inputs: list of input data items (or some proxies)
+names: list of names of the systems or models or experiments
+"""
         
         self.results = np.array(iterables)
+        self.inputs = inputs
+        self.names = names
         return
 
     @classmethod
@@ -79,6 +85,15 @@ There are as many iterables as examined systems."""
         """Create list of Results from unique CSV file."""
         res = np.loadtxt(file, dtype=int, delimiter=delimiter, unpack=True) # unpack to transpose into column vectors
         return cls(res)
+
+    @classmethod
+    def from_csv_with_inputs(cls, file, delimiter="\t", quotechar='"', newline=''):
+        """Create list of Results from unique CSV file with input string as first column."""
+        df = pd.read_csv(file, sep=delimiter, quotechar=quotechar)
+        inputs = list(df["input"]) # inputs only
+        names = list(df.columns)[1:]
+        res = df.iloc[:, 1:].to_numpy().transpose() # values only; transpose as in from_csv
+        return cls(res, inputs=inputs, names=names)
 
     @classmethod
     def from_csvs(cls, files, encoding='utf-8', delimiter=",", quotechar='"', newline=''):
@@ -139,6 +154,8 @@ class TPS(Results):
     def plot_bins(self, file=None, names=None):
         systems = (names if names is not None
                    else [chr(i) for i in range(ord('A'), ord('A')+len(self.results))])
+        # remove file name details if they follow the following pattern:
+        systems = [ re.sub("/[0-9][^/]+/test_predictions.tsv$", "", s, count=0, flags=0) for s in systems ]
         bins = list(range(len(systems)+1))
         sysbins = np.round(self.prop_nps_per_bin, decimals=2)
 
@@ -155,6 +172,9 @@ class TPS(Results):
 
         # Rotate the tick labels and set their alignment.
         # plt.setp(ax.get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor")
+        plt.setp(ax.get_xticklabels(), fontsize=5)
+        plt.setp(ax.get_yticklabels(), fontsize=2)
+        plt.subplots_adjust(top=0.88, bottom=0.11, left=0.44, right=0.9, hspace=0.2, wspace=0.2)
 
         # Loop over data dimensions and create text annotations.
         for i in range(len(systems)):
@@ -162,10 +182,12 @@ class TPS(Results):
                 val = int(sysbins[i, j]*100)
                 text = ax.text(j, i, val,
                                ha="center", va="center",
-                               color=("b" if val > 50 else "w"))
+                               color=("b" if val > 50 else "w"),
+                               fontsize=5,
+                )
 
-        ax.set_title("Performance (%) of each system on each bin")
-        fig.tight_layout()
+        ax.set_title("Performance (%) of each system on each bin", fontsize=5)
+        # fig.tight_layout()
         plt.show()
         if file is not None:
             fig.savefig(file)
@@ -180,7 +202,7 @@ if __name__ == '__main__':
         parser.add_argument("systems", help="file containing binary system results (e.g., true positives for each gold positive)")
 
         groupO = parser.add_argument_group('Options')
-        # groupO.add_argument("--ignore-extra-fields", action="store_true", help="Fields beyond NUMFIELDS will be silently ignored: the line will be truncated and processed.  Default is to log an error and skip the line.")
+        groupO.add_argument("--with-inputs", action="store_true", help="The input file includes a first column with system inputs.")
 
         groupA = parser.add_argument_group('Action')
         groupA.add_argument("--compute-bins", action="store_true", help="Compute bins.")
@@ -203,7 +225,10 @@ if __name__ == '__main__':
         if args.debug:
             logger.setLevel(logging.DEBUG)
 
-        r = TPS.from_csv(args.systems)
+        if args.with_inputs:
+            r = TPS.from_csv_with_inputs(args.systems)
+        else:
+            r = TPS.from_csv(args.systems)
 
         if args.compute_bins or args.plot_bins:
             logging.info("Computing bins of gold results: bin N holds the number of data items for which exactly N systems obtained a true positive")
@@ -221,7 +246,7 @@ if __name__ == '__main__':
             print(np.round(np.sum(r.results, axis=1)/np.sum(r.bins), decimals=4)*100)
         if args.plot_bins:
             logging.info("Plotting bins to {}".format(args.plot_bins))
-            names = None
+            names = r.names
             if args.system_names:
                 names = args.system_names.split(sep=',')
             r.plot_bins(file=args.plot_bins, names=names)
