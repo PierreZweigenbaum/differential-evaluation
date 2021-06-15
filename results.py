@@ -151,7 +151,7 @@ class TPS(Results):
         plt.show
         return
 
-    def plot_bins(self, file=None, names=None):
+    def plot_bins(self, file=None, names=None, absolute=False):
         systems = (names if names is not None
                    else [chr(i) for i in range(ord('A'), ord('A')+len(self.results))])
         # remove file name details if they follow the following pattern:
@@ -172,22 +172,22 @@ class TPS(Results):
 
         # Rotate the tick labels and set their alignment.
         # plt.setp(ax.get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor")
-        plt.setp(ax.get_xticklabels(), fontsize=5)
-        plt.setp(ax.get_yticklabels(), fontsize=2)
-        plt.subplots_adjust(top=0.88, bottom=0.11, left=0.44, right=0.9, hspace=0.2, wspace=0.2)
+        plt.setp(ax.get_xticklabels(), fontsize=4)
+        plt.setp(ax.get_yticklabels(), fontsize=4)
+        # plt.subplots_adjust(top=0.88, bottom=0.11, left=0.44, right=0.9, hspace=0.2, wspace=0.2)
 
         # Loop over data dimensions and create text annotations.
         for i in range(len(systems)):
             for j in range(len(bins)):
-                val = int(sysbins[i, j]*100)
+                val = (self.nps_per_bin[i, j] if absolute else int(sysbins[i, j]*100))
                 text = ax.text(j, i, val,
                                ha="center", va="center",
                                color=("b" if val > 50 else "w"),
-                               fontsize=5,
+                               fontsize=(4 if absolute else 5),
                 )
 
-        ax.set_title("Performance (%) of each system on each bin", fontsize=5)
-        # fig.tight_layout()
+        ax.set_title("Performance ({}) of each system on each bin".format(("#TPs" if absolute else "%TPs")), fontsize=5)
+        fig.tight_layout()
         plt.show()
         if file is not None:
             fig.savefig(file)
@@ -203,6 +203,7 @@ if __name__ == '__main__':
 
         groupO = parser.add_argument_group('Options')
         groupO.add_argument("--with-inputs", action="store_true", help="The input file includes a first column with system inputs.")
+        groupO.add_argument("--displayed-values", choices=["percentage", "number"], default="percentage", help="How to display values in the produced table.")
 
         groupA = parser.add_argument_group('Action')
         groupA.add_argument("--compute-bins", action="store_true", help="Compute bins.")
@@ -245,11 +246,11 @@ if __name__ == '__main__':
             logging.info("Recall of each system")
             print(np.round(np.sum(r.results, axis=1)/np.sum(r.bins), decimals=4)*100)
         if args.plot_bins:
-            logging.info("Plotting bins to {}".format(args.plot_bins))
+            logging.info("Plotting bins as {} to {}".format(args.displayed_values, args.plot_bins))
             names = r.names
             if args.system_names:
                 names = args.system_names.split(sep=',')
-            r.plot_bins(file=args.plot_bins, names=names)
+            r.plot_bins(file=args.plot_bins, names=names, absolute=(args.displayed_values=="number"))
             
 
     parse_execute_command_line()
