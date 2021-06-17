@@ -303,7 +303,7 @@ if __name__ == '__main__':
             names = r.names
             if args.system_names:
                 names = args.system_names.split(sep=',')
-            r.plot_bins_v2(file=args.plot_bins, names=names, absolute=(args.displayed_values=="number"))
+            r.plot_bins(file=args.plot_bins, names=names, absolute=(args.displayed_values=="number"))
             
 
     parse_execute_command_line()
