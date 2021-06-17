@@ -42,6 +42,10 @@ Compare two systems according to an already defined set of bins
 ## Command-line example
     python results.py --system-names A1,A2,B1,B2,C1,C2,D,E1,E2 --plot-bins plot.pdf true-positives-per-system.tab.gz
 
+Input examples may be included as the first column of the input table, and system names as the first row of the input table (bc5-d-models.tab):
+    python results.py --with-inputs --displayed-values number --plot-bins bc5-d-models.pdf bc5-d-models.tab >bc5-d-models.out
+
+
 """
 
 """
