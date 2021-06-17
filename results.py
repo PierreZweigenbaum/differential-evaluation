@@ -19,6 +19,9 @@ We can then describe a data item by the bin that contains it: its difficulty.
 We can finally summmarize a system's result by its number of TPs in each bin,
 or by the proportion of items in that bin for which it produced a TP.
 
+Further services:
+Compare two systems according to an already defined set of bins
+
 ## Example
     # create random system results drawn from a binomial distribution:
     n_sys = 10
@@ -193,6 +196,52 @@ class TPS(Results):
             fig.savefig(file)
         return
 
+    def plot_bins_v2(self, file=None, names=None, absolute=False):
+        systems = (names if names is not None
+                   else [chr(i) for i in range(ord('A'), ord('A')+len(self.results))])
+        # remove file name details if they follow the following pattern:
+        systems = [ re.sub("/[0-9][^/]+/test_predictions.tsv$", "", s, count=0, flags=0) for s in systems ]
+        bins = list(range(len(systems)+1))
+        sysbins = np.round(self.prop_nps_per_bin, decimals=2)
+        title = "Performance ({}) of each system on each bin".format(("#TPs" if absolute else "%TPs"))
+        self.plot_bins_internal(file=file, systems=systems, bins=bins, sysbins=sysbins, title=title, absolute=absolute)
+        return
+
+    def plot_bins_internal(self, file=None, systems=None, bins=None, sysbins=None, title=None, absolute=False):
+        fig, ax = plt.subplots()
+        im = ax.imshow(sysbins)
+
+        # We want to show all ticks...
+        ax.set_xticks(np.arange(len(bins)))
+        ax.set_yticks(np.arange(len(systems)))
+        # ... and label them with the respective list entries
+        ax.set_xticklabels(bins)
+        ax.set_yticklabels(systems)
+        ax.set_ylim(len(systems)-0.5,-0.5) # show first and last systems with full row height
+
+        # Rotate the tick labels and set their alignment.
+        # plt.setp(ax.get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor")
+        plt.setp(ax.get_xticklabels(), fontsize=4)
+        plt.setp(ax.get_yticklabels(), fontsize=4)
+        # plt.subplots_adjust(top=0.88, bottom=0.11, left=0.44, right=0.9, hspace=0.2, wspace=0.2)
+
+        # Loop over data dimensions and create text annotations.
+        for i in range(len(systems)):
+            for j in range(len(bins)):
+                val = sysbins[i, j]
+                text = ax.text(j, i, val,
+                               ha="center", va="center",
+                               color=("b" if val > 50 else "w"),
+                               fontsize=(4 if absolute else 5),
+                )
+
+        ax.set_title(title, fontsize=5)
+        fig.tight_layout()
+        plt.show()
+        if file is not None:
+            fig.savefig(file)
+        return
+
 if __name__ == '__main__':
     def parse_execute_command_line():
         parser = argparse.ArgumentParser(prog=os.path.basename(sys.argv[0]),
@@ -250,7 +299,7 @@ if __name__ == '__main__':
             names = r.names
             if args.system_names:
                 names = args.system_names.split(sep=',')
-            r.plot_bins(file=args.plot_bins, names=names, absolute=(args.displayed_values=="number"))
+            r.plot_bins_v2(file=args.plot_bins, names=names, absolute=(args.displayed_values=="number"))
             
 
     parse_execute_command_line()
