@@ -14,8 +14,8 @@ where
 
 
 EXAMPLE CALL
-for CONLL format. Prepare a TP table for the token-level predictions of 3 NER models on the Biocreative 5 CDR disease dataset:
-python readers.py --output-file bc5-d-models.tab bc5-d-model-1.tsv bc5-d-model-2.tsv bc5-d-model-3.tsv
+for CONLL format. Prepare a TP table for the token-level predictions of 12 NER models on the Biocreative 5 CDR chemical dataset:
+python readers.py --output-file data/bc5-c-models.tsv data/bc5-chemical/*.tsv
 
 
 INPUT FORMATS:
