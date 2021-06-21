@@ -35,6 +35,15 @@ or by the proportion of items in that bin for which it produced a TP.
 ## Command-line example
     python results.py --system-names A1,A2,B1,B2,C1,C2,D,E1,E2 --plot-bins outputs/plot-HU.pdf data/HU-eval-dist-tps.tsv.gz
 
+This creates the following plot:
+
+![alt text](./outputs/plot-HU.png "Comparing the true positives of 9 systems on the same dataset")
+
 Input examples may be included as the first column of the input table, and system names as the first row of the input table (data/bc5-c-models.tsv), using --with-inputs (--displayed-values number displays raw counts instead of percentages in each bin):
 
     python results.py --with-inputs --displayed-values number --plot-bins outputs/bc5-c-models.pdf data/bc5-c-models.tsv.gz >outputs/bc5-c-models.out
+
+This creates the following plot:
+
+![alt text](./outputs/bc5-c-models.png "Comparing the true positives of 12 systems on the same dataset")
+
