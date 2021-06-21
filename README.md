@@ -47,3 +47,15 @@ This creates the following plot:
 
 ![alt text](./outputs/bc5-c-models.png "Comparing the true positives of 12 systems on the same dataset")
 
+## Creating a True Positive table from CONLL-style tsv input
+
+The input TSV file must include a header line and either contain:
+
+- exactly three columns containing token, gold, and system prediction
+- any number of columns in any order, with column labels including "input", "gold", and "system"
+
+### EXAMPLE CALL for CONLL format
+
+Prepare a TP table for the token-level predictions of 12 NER models on the Biocreative 5 CDR chemical dataset:
+
+    python readers.py --output-file data/bc5-c-models.tsv data/bc5-chemical/*.tsv
