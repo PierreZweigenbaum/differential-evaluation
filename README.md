@@ -15,7 +15,7 @@ We can then describe a data item by the bin that contains it: its difficulty.
 We can finally summmarize a system's result by its number of TPs in each bin,
 or by the proportion of items in that bin for which it produced a TP.
 
-## Example
+## Python example
     # create random system results drawn from a binomial distribution:
     n_sys = 10
     n_data = 100
@@ -31,3 +31,10 @@ or by the proportion of items in that bin for which it produced a TP.
     print(r.nps_per_bin)
     print(np.round(r.prop_nps_per_bin, decimals=2)*100)
     print(np.sum(r.results, axis=1))
+
+## Command-line example
+    python results.py --system-names A1,A2,B1,B2,C1,C2,D,E1,E2 --plot-bins outputs/plot-HU.pdf data/HU-eval-dist-tps.tsv.gz
+
+Input examples may be included as the first column of the input table, and system names as the first row of the input table (data/bc5-c-models.tsv), using --with-inputs (--displayed-values number displays raw counts instead of percentages in each bin):
+
+    python results.py --with-inputs --displayed-values number --plot-bins outputs/bc5-c-models.pdf data/bc5-c-models.tsv.gz >outputs/bc5-c-models.out
