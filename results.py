@@ -66,7 +66,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 
 # Program version
-version = '0.2'
+version = '0.3'
 
 #================
 # Base class for set of results
@@ -74,36 +74,45 @@ version = '0.2'
 class Results():
     """Set of results"""
 
-    def __init__(self, iterables, inputs=None, names=None):
+    def __init__(self, iterables, inputs=None, names=None, df=None):
         """Argument is a list of iterables of the same length.
 Each iterable represents the results obtained by a system on a series of input data items.
 There are as many iterables as examined systems.
 inputs: list of input data items (or some proxies)
 names: list of names of the systems or models or experiments
+df: a dataframe, if any, for the input data
 """
         
         self.results = np.array(iterables)
         self.inputs = inputs
         self.names = names
+        if df is None:
+            df = pd.DataFrame(self.results.transpose, columns=self.names)
+            if inputs is None:
+                df["input"] = "" # broadcast empty string to whole "input" column
+            else:
+                df["input"] = self.inputs
+        self.df = df
         return
 
     @classmethod
-    def from_csv(cls, file, delimiter="\t", quotechar='"', newline=''):
+    def from_csv(cls, file, delimiter="\t", quotechar='"', newline='', names=None):
         """Create list of Results from unique CSV file."""
         res = np.loadtxt(file, dtype=int, delimiter=delimiter, unpack=True) # unpack to transpose into column vectors
-        return cls(res)
+        return cls(res, names=names)
 
     @classmethod
-    def from_csv_with_inputs(cls, file, delimiter="\t", quotechar='"', newline=''):
+    def from_csv_with_inputs(cls, file, delimiter="\t", quotechar='"', newline='', names=None):
         """Create list of Results from unique CSV file with input string as first column."""
         df = pd.read_csv(file, sep=delimiter, quotechar=quotechar)
         inputs = list(df["input"]) # inputs only
-        names = list(df.columns)[1:]
+        if names is None:
+            names = list(df.columns)[1:]
         res = df.iloc[:, 1:].to_numpy().transpose() # values only; transpose as in from_csv
-        return cls(res, inputs=inputs, names=names)
+        return cls(res, inputs=inputs, names=names, df=df)
 
     @classmethod
-    def from_csvs(cls, files, encoding='utf-8', delimiter=",", quotechar='"', newline=''):
+    def from_csvs(cls, files, encoding='utf-8', delimiter=",", quotechar='"', newline='', names=None):
         """Create Results from list of CSV files."""
         res = []
         for file in files:
@@ -113,7 +122,7 @@ names: list of names of the systems or models or experiments
                 for fields in reader:
                     r.append(fields)
             res.append(r)
-        return cls(res)
+        return cls(res, names=names)
 
 class TPS(Results):
     """Set of true positive (TP) results: binary vectors"""
@@ -134,6 +143,7 @@ class TPS(Results):
         and by the proportion of items in that bin for which it produced a TP (correct result)."""
         # a data item has been found as TP by how many systems
         self.tps_per_item = np.sum(self.results, axis=0)
+        self.df["bin"] = self.tps_per_item # add a column
         # histogram: nb_sys+1 bins, nb_sys+2 bin edges
         bin_def = range(len(self.results)+2)
         # histogram: number of data points found as TPs by N systems, for N in 0..nb_systems
@@ -246,6 +256,10 @@ class TPS(Results):
             fig.savefig(file)
         return
 
+    def annotate_bins(self, file=None):
+        self.df.to_csv(file, index=None, sep="\t", columns=["input"] + self.names + ["bin"])
+        return
+
 if __name__ == '__main__':
     def parse_execute_command_line():
         parser = argparse.ArgumentParser(prog=os.path.basename(sys.argv[0]),
@@ -260,7 +274,8 @@ if __name__ == '__main__':
 
         groupA = parser.add_argument_group('Action')
         groupA.add_argument("--compute-bins", action="store_true", help="Compute bins.")
-        groupA.add_argument("--plot-bins", help="Compute bins and plot them to the specified file.")
+        groupA.add_argument("--plot-bins", help="Compute bins, plot them to the specified file.")
+        groupA.add_argument("--annotate-bins", help="Compute bins, add them to the input table, output resulting table to the specified file.")
         groupA.add_argument("--system-names", help="Comma-separated list of system names.")
 
         groupS = parser.add_argument_group('Special')
@@ -279,12 +294,15 @@ if __name__ == '__main__':
         if args.debug:
             logger.setLevel(logging.DEBUG)
 
+        names = None
+        if args.system_names:
+            names = args.system_names.split(sep=',')
         if args.with_inputs:
-            r = TPS.from_csv_with_inputs(args.systems)
+            r = TPS.from_csv_with_inputs(args.systems, names=names)
         else:
-            r = TPS.from_csv(args.systems)
+            r = TPS.from_csv(args.systems, names=names)
 
-        if args.compute_bins or args.plot_bins:
+        if args.compute_bins or args.plot_bins or args.annotate_bins:
             logging.info("Computing bins of gold results: bin N holds the number of data items for which exactly N systems obtained a true positive")
             r.compute_bins()
             # print(r.results)
@@ -301,9 +319,10 @@ if __name__ == '__main__':
         if args.plot_bins:
             logging.info("Plotting bins as {} to {}".format(args.displayed_values, args.plot_bins))
             names = r.names
-            if args.system_names:
-                names = args.system_names.split(sep=',')
             r.plot_bins(file=args.plot_bins, names=names, absolute=(args.displayed_values=="number"))
+        if args.annotate_bins:
+            logging.info("Annotating bins to {}".format(args.annotate_bins))
+            r.annotate_bins(file=args.annotate_bins)
             
 
     parse_execute_command_line()
