@@ -39,7 +39,7 @@ or by the proportion of items in that bin for which it produced a TP.
 
 Sample input:
 
-| | | | | | | | | | | | |
+|||||||||||||
 |----|----|----|----|----|----|----|----|----|
 |1|1|1|1|1|1|1|1|1|
 |1|1|1|1|1|1|1|1|1|
@@ -47,6 +47,7 @@ Sample input:
 |1|0|0|1|1|0|0|1|0|
 |1|0|0|1|0|0|0|1|0|
 |1|0|0|0|0|0|0|0|0|
+
 
 Command line:
 
@@ -95,6 +96,7 @@ Sample output:
 |1105_cyp|1|0|1|1|0|0|1|0|0|0|1|0|5|
 |1128_cyp|1|0|1|1|0|0|0|0|0|0|0|0|3|
 |[...]|
+
 
 The resulting table can be explored with your preferred tool, for instance to study correlations of inputs and bins, or to compare systems within bins.
 
