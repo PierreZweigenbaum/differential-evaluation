@@ -108,7 +108,7 @@ The input TSV file must include a header line and either contain:
 
 ### Converter from CONLL format: example call
 
-Prepare a TP table for the token-level predictions of 12 NER models on the Biocreative 5 CDR chemical dataset:
+Prepare a TP table for the token-level predictions of 12 NER models on the Biocreative 5 CDR chemical and disease datasets:
 
     python readers.py --output-file data/bc5-c-models.tsv.gz data/bc5-chemical/*.tsv.gz
     python readers.py --output-file data/bc5-d-models.tsv.gz data/bc5-disease/*.tsv.gz
