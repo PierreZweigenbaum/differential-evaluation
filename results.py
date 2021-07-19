@@ -45,6 +45,8 @@ Compare two systems according to an already defined set of bins
 Input examples may be included as the first column of the input table, and system names as the first row of the input table (bc5-d-models.tab):
     python results.py --with-inputs --displayed-values number --plot-bins bc5-d-models.pdf bc5-d-models.tab >bc5-d-models.out
 
+## Add bin ID to input table
+    python results.py --with-inputs --displayed-values number --annotate-bins outputs/bc5-c-models-bins.tsv data/bc5-c-models.tsv.gz
 
 """
 
