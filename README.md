@@ -39,7 +39,7 @@ or by the proportion of items in that bin for which it produced a TP.
 
 Sample input:
 
-
+||||||||||
 |----|----|----|----|----|----|----|----|----|
 |1|1|1|1|1|1|1|1|1|
 |1|1|1|1|1|1|1|1|1|
