@@ -89,7 +89,7 @@ df: a dataframe, if any, for the input data
         self.inputs = inputs
         self.names = names
         if df is None:
-            df = pd.DataFrame(self.results.transpose, columns=self.names)
+            df = pd.DataFrame(self.results.transpose(), columns=self.names)
             if inputs is None:
                 df["input"] = "" # broadcast empty string to whole "input" column
             else:
